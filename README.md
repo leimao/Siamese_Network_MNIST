@@ -40,7 +40,7 @@ I used different colors to represent the ground truth of different MNIST test da
 
 ![](embed.jpeg)
 
-The we can see the clustering of the data with the same ground truth label, suggesting the model is working extremely well for this dataset. 
+Here we can see the clustering of the data with the same ground truth label, suggesting the model is working extremely well for this dataset. 
 
 It should also be noted that, changing model details, such as the optimizer (from GradientDescent Optimzer to Adam Optimzer), may have significant effect on the "clustering" effect of the test data. It might be due to unbalanced sampling if we employ stochastic optimizer, which needs to be further investigated if required.
 
