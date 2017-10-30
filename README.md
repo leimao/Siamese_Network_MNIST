@@ -36,6 +36,8 @@ The visualization will be saved as "embed.jpeg".
 
 ## Result
 
+I used different colors to represent the ground truth of different MNIST test data. The coordinates of the test data is the two dimensional embeding features.
+
 ![](embed.jpeg)
 
 ## References
