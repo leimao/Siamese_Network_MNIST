@@ -1,4 +1,4 @@
-# Train Siamese Network on MNIST Dataset
+# Siamese Network on MNIST Dataset
 
 Author: Lei Mao
 
