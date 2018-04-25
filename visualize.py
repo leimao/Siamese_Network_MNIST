@@ -1,6 +1,8 @@
 from tensorflow.examples.tutorials.mnist import input_data
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 def visualize(embed, labels):
@@ -16,7 +18,7 @@ def visualize(embed, labels):
         ax.scatter(embed[indices,0], embed[indices,1], label = label, s = 20)
     ax.legend()
     fig.savefig('embed.jpeg', format='jpeg', dpi=600, bbox_inches='tight')
-    plt.show()
+    plt.close()
 
 mnist = input_data.read_data_sets('MNIST_data', one_hot = False)
 
