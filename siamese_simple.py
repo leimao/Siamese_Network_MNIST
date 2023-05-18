@@ -19,7 +19,7 @@ import os
 import numpy as np
 import random
 
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 SAVE_PERIOD = 500
 MODEL_DIR = 'model/' # path for saving the model
 MODEL_NAME = 'siamese_model.pt'
