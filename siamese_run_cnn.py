@@ -43,6 +43,7 @@ for episode in range(EPISODE_MAX):
         # Backward and optimize
         optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm(siamese_net.parameters(), max_norm=1.0)
         optimizer.step()
         
         if (i+1) % 20 == 0:
