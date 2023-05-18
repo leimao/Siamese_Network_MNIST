@@ -43,7 +43,7 @@ for episode in range(EPISODE_MAX):
         # Backward and optimize
         optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm(siamese_net.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(siamese_net.parameters(), max_norm=1.0)
         optimizer.step()
         
         if (i+1) % 20 == 0:
@@ -70,4 +70,4 @@ for episode in range(EPISODE_MAX):
         torch.save(losses,f'loss_history.pt')
 
         # save embeddings to text file
-        save_embeddings(siamese_net, test_loader, filename=f'embed_ep:{episode+1}.pt')
+        save_embeddings_cnn(siamese_net, test_loader, filename=f'embed_ep:{episode+1}.pt')

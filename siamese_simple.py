@@ -205,5 +205,20 @@ def save_embeddings(model, loader, filename='embed.txt'):
     # save to file
     torch.save(all_embeddings, filename)
 
+def save_embeddings_cnn(model, loader, filename='embed.txt'):
+    all_embeddings = []
+    with torch.no_grad():
+        for images, _ in loader:
+            images = images.view(-1,1,28,28).to(device)
+            embeddings = model.forward_once(images)  # Assuming your network's forward method takes one argument
+            all_embeddings.append(embeddings)
+
+    # convert to torch tensor
+    all_embeddings = torch.cat(all_embeddings, dim=0)
+
+    # save to file
+    torch.save(all_embeddings, filename)
+
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
