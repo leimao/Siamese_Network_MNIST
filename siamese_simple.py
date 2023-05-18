@@ -145,6 +145,27 @@ def compute_test_loss(model, test_loader, criterion, device):
     # Return average test loss
     return total_loss / len(test_loader)
 
+# Function for computing test loss
+def compute_test_loss_cnn(model, test_loader, criterion, device):
+    model.eval()  # Set the model to evaluation mode
+    total_loss = 0
+
+    with torch.no_grad():  # No need to track gradients in testing
+        for i, (images, labels) in enumerate(test_loader):
+            images = images.view(-1,1,28,28).to(device)
+            labels = labels.to(device)
+            pairs, targets = create_pairs(images, labels)
+            
+            # Forward pass
+            output1, output2 = model(pairs[:, 0], pairs[:, 1])
+            loss = criterion(output1.to(device), output2.to(device), targets.to(device))
+
+            total_loss += loss.item()
+
+    # Return average test loss
+    return total_loss / len(test_loader)
+
+
 # Create a balanced set of pairs for each batch
 def create_pairs(images, labels):
     digit_indices = [torch.where(labels == i)[0] for i in range(10)]

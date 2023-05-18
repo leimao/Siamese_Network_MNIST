@@ -53,7 +53,7 @@ for episode in range(EPISODE_MAX):
     losses['train'].append(loss.item())
 
     # Compute test loss
-    test_loss = compute_test_loss(siamese_net, test_loader, criterion, device)
+    test_loss = compute_test_loss_cnn(siamese_net, test_loader, criterion, device)
     losses['test'].append(test_loss)
 
     sys.stdout.write('\rEpisode [{}/{}], Test Loss: {:.4f}\n'.format(episode+1, EPISODE_MAX, test_loss))
