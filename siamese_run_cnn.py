@@ -18,7 +18,7 @@ test_loader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=Fa
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-siamese_net = Siamese().to(device)
+siamese_net = Siamese_CNN().to(device)
 summary(siamese_net, input_size=[(1, 28, 28), (1, 28, 28)])
 criterion = ContrastiveLoss()
 optimizer = torch.optim.SGD(siamese_net.parameters(), lr=LEARNING_RATE)
@@ -32,7 +32,7 @@ losses = {
 # Adjusted training loop with loss storage
 for episode in range(EPISODE_MAX):
     for i, (images, labels) in enumerate(train_loader):
-        images = images.view(-1, 28*28).to(device)
+        images = images.view(-1, 1, 28, 28).to(device)
         labels = labels.to(device)
         pairs, targets = create_pairs(images, labels)
 

@@ -63,6 +63,42 @@ class Siamese(nn.Module):
         output1 = self.forward_once(input1)
         output2 = self.forward_once(input2)
         return output1, output2
+
+class Siamese_CNN(nn.Module):
+
+    def __init__(self):
+        super(Siamese_CNN, self).__init__()
+
+        # Define the architecture of the sub-networks
+        self.conv_layer = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.BatchNorm2d(32),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+        
+        self.fc_layer = nn.Sequential(
+            nn.Linear(7*7*64, 128),
+            nn.ReLU(),
+            nn.BatchNorm1d(128),
+            nn.Dropout(0.5),
+            nn.Linear(128, 2)
+        )
+        
+    def forward_once(self, x):
+        output = self.conv_layer(x)
+        output = output.view(output.size()[0], -1)  # Flatten the output
+        output = self.fc_layer(output)
+        return output
+
+    def forward(self, input1, input2):
+        output1 = self.forward_once(input1)
+        output2 = self.forward_once(input2)
+        return output1, output2
     
 class ContrastiveLoss(nn.Module):
 
@@ -81,10 +117,10 @@ siamese_net = Siamese().to(device)
 criterion = ContrastiveLoss()
 optimizer = optim.SGD(siamese_net.parameters(), lr=LEARNING_RATE)
 
-def save_model():
+def save_model(model_name):
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR)
-    torch.save(siamese_net.state_dict(), MODEL_DIR + MODEL_NAME)
+    torch.save(siamese_net.state_dict(), MODEL_DIR + model_name)
 
 def load_model():
     siamese_net.load_state_dict(torch.load(MODEL_DIR + MODEL_NAME))
@@ -115,15 +151,38 @@ def create_pairs(images, labels):
     pairs = []
     labels = []
 
-    for d in range(10):
+    # find where the length of each element in digit indices is nonzero
+    good_label_digits = np.where([len(d) > 0 for d in digit_indices])[0]
+
+    # redefine the digit_indices
+    digit_indices = [digit_indices[i] for i in good_label_digits]
+
+    for d in good_label_digits:
         for i in range(len(digit_indices[d]) - 1):
             z1, z2 = digit_indices[d][i], digit_indices[d][i + 1]
             pairs.append(torch.stack([images[z1], images[z2]]))  # change here
-            inc = random.randrange(1, 10)
-            dn = (d + inc) % 10
+            inc = random.randrange(1, len(good_label_digits))
+            dn = (d + inc) % len(good_label_digits)
             j = (i + inc) % len(digit_indices[dn])
             z1, z2 = digit_indices[d][i], digit_indices[dn][j]
             pairs.append(torch.stack([images[z1], images[z2]]))
             labels.extend([1, 0])
             
     return torch.stack(pairs), torch.tensor(labels)
+
+def save_embeddings(model, loader, filename='embed.txt'):
+    all_embeddings = []
+    with torch.no_grad():
+        for images, _ in loader:
+            images = images.view(-1, 28*28).to(device)
+            embeddings = model.forward_once(images)  # Assuming your network's forward method takes one argument
+            all_embeddings.append(embeddings)
+
+    # convert to torch tensor
+    all_embeddings = torch.cat(all_embeddings, dim=0)
+
+    # save to file
+    torch.save(all_embeddings, filename)
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
