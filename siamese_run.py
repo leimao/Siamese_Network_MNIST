@@ -35,7 +35,7 @@ for episode in range(EPISODE_MAX):
 
         # Forward pass
         output1, output2 = siamese_net(pairs[:, 0], pairs[:, 1])
-        loss = criterion(output1, output2, targets)
+        loss = criterion(output1.to(device), output2.to(device), targets.to(device))
 
         # Backward and optimize
         optimizer.zero_grad()

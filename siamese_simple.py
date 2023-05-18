@@ -102,7 +102,7 @@ def compute_test_loss(model, test_loader, criterion, device):
             
             # Forward pass
             output1, output2 = model(pairs[:, 0], pairs[:, 1])
-            loss = criterion(output1, output2, targets)
+            loss = criterion(output1.to(device), output2.to(device), targets.to(device))
 
             total_loss += loss.item()
 
