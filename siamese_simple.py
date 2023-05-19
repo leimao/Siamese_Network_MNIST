@@ -173,12 +173,10 @@ def create_pairs(images, labels):
     labels = []
 
     # find where the length of each element in digit indices is nonzero
-    good_label_digits = np.where([len(d) > 0 for d in digit_indices])[0]
+    good_label_indices = np.where([len(d) > 0 for d in digit_indices])[0]
 
-    # redefine the digit_indices
-    digit_indices = [digit_indices[i] for i in good_label_digits]
-
-    for d in good_label_digits:
+    for idx in good_label_indices:
+        d = digit_indices[idx]
         for i in range(len(digit_indices[d]) - 1):
             z1, z2 = digit_indices[d][i], digit_indices[d][i + 1]
             pairs.append(torch.stack([images[z1], images[z2]]))  # change here
