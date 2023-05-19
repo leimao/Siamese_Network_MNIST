@@ -26,7 +26,7 @@ mnist = datasets.MNIST(root='./data', train=False, download=True, transform=tran
 mnist_test_labels = mnist.targets.numpy()
 
 # Load embedding from file
-embed = torch.load('embed_ep:20.pt').numpy()
+embed = torch.load('embed_ep:50.pt', map_location=torch.device('cpu')).numpy()
 embed = embed.reshape([-1, 2])
 
 visualize(embed, mnist_test_labels)

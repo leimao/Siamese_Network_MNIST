@@ -177,13 +177,13 @@ def create_pairs(images, labels):
 
     for idx in good_label_indices:
         d = digit_indices[idx]
-        for i in range(len(digit_indices[d]) - 1):
-            z1, z2 = digit_indices[d][i], digit_indices[d][i + 1]
+        for i in range(len(d) - 1):
+            z1, z2 = d[i], d[i + 1]
             pairs.append(torch.stack([images[z1], images[z2]]))  # change here
-            inc = random.randrange(1, len(good_label_digits))
-            dn = (d + inc) % len(good_label_digits)
-            j = (i + inc) % len(digit_indices[dn])
-            z1, z2 = digit_indices[d][i], digit_indices[dn][j]
+            inc = random.randrange(1, 10)
+            dn = digit_indices[(idx + inc) % 10]
+            j = random.randrange(0, len(dn))
+            z1, z2 = d[i], dn[j]
             pairs.append(torch.stack([images[z1], images[z2]]))
             labels.extend([1, 0])
             

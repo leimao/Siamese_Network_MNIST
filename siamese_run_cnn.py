@@ -29,6 +29,9 @@ losses = {
     'test': [],
 }
 
+# Initialize best test loss to a high value
+best_test_loss = float('inf')
+
 # Adjusted training loop with loss storage
 for episode in range(EPISODE_MAX):
     for i, (images, labels) in enumerate(train_loader):
@@ -60,12 +63,14 @@ for episode in range(EPISODE_MAX):
     sys.stdout.write('\rEpisode [{}/{}], Test Loss: {:.4f}\n'.format(episode+1, EPISODE_MAX, test_loss))
     sys.stdout.flush()
 
+    # Check if this model is better (i.e., has lower test loss)
+    if test_loss < best_test_loss:
+        print('Test loss improved from {:.4f} to {:.4f}, saving best model to siamese_best.pt'.format(best_test_loss, test_loss))
+        best_test_loss = test_loss
+        torch.save(siamese_net.state_dict(), 'siamese_best.pt')
+
     # Save model
     if (episode+1) % 10 == 0:
-        print('Saving checkpoint...')
-        save_model(f'siamese_ckpt_ep:{episode+1}.pt')
-        print('Checkpoint saved!')
-
         # save the loss history
         torch.save(losses,f'loss_history.pt')
 
