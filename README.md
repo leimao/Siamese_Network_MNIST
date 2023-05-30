@@ -1,6 +1,6 @@
 # Siamese Network on MNIST Dataset
 
-Author: Lei Mao
+Author: Malek Ibrahim (forked from Lei Mao original Tensorflow code)
 
 Date: 10/30/2017
 
