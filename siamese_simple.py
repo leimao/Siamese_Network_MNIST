@@ -183,7 +183,8 @@ def create_pairs(images, labels):
             labels.extend([1])
 
             # Find a label with images
-            for inc in range(1, 10):
+            while True:
+                inc = random.randrange(1, 10)
                 dn_idx = (idx + inc) % 10
                 dn = digit_indices[dn_idx]
                 if len(dn) > 0:  # Only proceed if dn is not empty
@@ -192,7 +193,7 @@ def create_pairs(images, labels):
                     pairs.append(torch.stack([images[z1], images[z2]]))
                     labels.extend([0])
                     break  # Exit the loop as soon as a valid pair is found     
-                       
+
     return torch.stack(pairs), torch.tensor(labels)
 
 def save_embeddings(model, loader, filename='embed.txt'):
