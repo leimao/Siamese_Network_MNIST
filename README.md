@@ -10,11 +10,11 @@ This is a practice of Siamese Network implementation on simple MNIST dataset, tr
 
 ## Requirements
 
-* Python 3.6
+* Python 3.10
 
 ## Dependencies
 
-* TensorFlow 1.3
+* Pytorch
 * Matplotlib 2.0
 * Numpy 1.13
 
