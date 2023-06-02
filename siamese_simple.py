@@ -12,126 +12,199 @@ https://www.tensorflow.org/versions/r0.12/how_tos/variable_scope/
 Simple Siamese Network
 https://github.com/ywpkwon/siamese_tf_mnist/blob/master/inference.py
 '''
-import tensorflow as tf
+import torch
+import torch.nn as nn
+import torch.optim as optim
 import os
+import numpy as np
+import random
 
-LEARNING_RATE = 0.01
-SAVE_PERIOD = 500
-MODEL_DIR = 'model/' # path for saving the model
-MODEL_NAME = 'siamese_model'
-RAND_SEED = 0 # random seed
-tf.set_random_seed(RAND_SEED)
-
-class Siamese(object):
+class Siamese(nn.Module):
 
     def __init__(self):
-        # Initialize
-        # First input image
-        self.tf_input_1 = tf.placeholder(tf.float32, [None, 784], name = 'input_1')
-        # Second input image
-        self.tf_input_2 = tf.placeholder(tf.float32, [None, 784], name = 'input_2')
-        # Label of the image pair
-        # 1: paired, 0: unpaired
-        self.tf_label = tf.placeholder(tf.float32, [None,], name = 'label')
-        # Output
-        self.output_1, self.output_2 = self.network_initializer()
-        # Loss
-        self.loss = self.loss_contrastive()
-        # Optimizer
-        self.optimizer = self.optimizer_initializer()
-        # Initialize tensorflow session
-        self.saver = tf.train.Saver()
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
+        super(Siamese, self).__init__()
+        self.fc_layer = nn.Sequential(
+            nn.Linear(784, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 2)
+        )
+        # # Initialize
+        # # First input image
+        # self.tf_input_1 = tf.placeholder(tf.float32, [None, 784], name = 'input_1')
+        # # Second input image
+        # self.tf_input_2 = tf.placeholder(tf.float32, [None, 784], name = 'input_2')
+        # # Label of the image pair
+        # # 1: paired, 0: unpaired
+        # self.tf_label = tf.placeholder(tf.float32, [None,], name = 'label')
+        # # Output
+        # self.output_1, self.output_2 = self.network_initializer()
+        # # Loss
+        # self.loss = self.loss_contrastive()
+        # # Optimizer
+        # self.optimizer = self.optimizer_initializer()
+        # # Initialize tensorflow session
+        # self.saver = tf.train.Saver()
+        # self.sess = tf.Session()
+        # self.sess.run(tf.global_variables_initializer())
+    
+    def forward_once(self, x):
+        return self.fc_layer(x)
+    
+    def forward(self, input1, input2):
+        output1 = self.forward_once(input1)
+        output2 = self.forward_once(input2)
+        return output1, output2
 
-    # Old-school way to initialize fc parameters
-    def fc_layer(self, tf_input, n_hidden_units, variable_name):
-        # tf_input: batch_size x n_features
-        # n_hidden_units: number of hidden units
-        assert len(tf_input.get_shape()) == 2
-        n_features = tf_input.get_shape()[1]
-        tf_weight_initializer = tf.truncated_normal_initializer(mean = 0, stddev = 0.01) 
-        # Similar to tf.random_normal_initializer except for the truncation
-        tf_bias_initializer = tf.constant_initializer(0.01)
-        W = tf.get_variable(
-            name = variable_name + '_W', 
-            dtype = tf.float32, 
-            shape = [n_features, n_hidden_units], 
-            initializer = tf_weight_initializer
-            )
-        b = tf.get_variable(
-            name = variable_name + '_b', 
-            dtype = tf.float32, 
-            shape = [n_hidden_units], 
-            initializer = tf_bias_initializer
-            )
-        fc = tf.nn.bias_add(tf.matmul(tf_input, W), b)
-        return fc
+class Siamese_CNN(nn.Module):
 
-    def network(self, tf_input):
-        # Setup FNN
-        fc1 = self.fc_layer(tf_input = tf_input, n_hidden_units = 1024, variable_name = 'fc1')
-        ac1 = tf.nn.relu(fc1)
-        fc2 = self.fc_layer(tf_input = ac1, n_hidden_units = 1024, variable_name = 'fc2')
-        ac2 = tf.nn.relu(fc2)
-        fc3 = self.fc_layer(tf_input = ac2, n_hidden_units = 2, variable_name = 'fc3')
-        return fc3
+    def __init__(self):
+        super(Siamese_CNN, self).__init__()
 
-    def network_initializer(self):
-        # Initialze neural network
-        with tf.variable_scope("siamese") as scope:
-            output_1 = self.network(self.tf_input_1)
-            # Share weights
-            scope.reuse_variables()
-            output_2 = self.network(self.tf_input_2)
-        return output_1, output_2
-
-
-    def loss_contrastive(self, margin = 5.0):
-        # Define loss function
-        with tf.variable_scope("loss_function") as scope:
-            labels = self.tf_label
-            # Euclidean distance squared
-            eucd2 = tf.pow(tf.subtract(self.output_1, self.output_2), 2, name = 'eucd2')
-            eucd2 = tf.reduce_sum(eucd2, 1)
-            # Euclidean distance
-            # We add a small value 1e-6 to increase the stability of calculating the gradients for sqrt
-            # See https://github.com/tensorflow/tensorflow/issues/4914
-            eucd = tf.sqrt(eucd2 + 1e-6, name = 'eucd')
-            # Loss function
-            loss_pos = tf.multiply(labels, eucd2, name = 'constrastive_loss_1')
-            loss_neg = tf.multiply(tf.subtract(1.0, labels), tf.pow(tf.maximum(tf.subtract(margin, eucd), 0), 2), name = 'constrastive_loss_2')
-            loss = tf.reduce_mean(tf.add(loss_neg, loss_pos), name = 'constrastive_loss')
-        return loss
-
-    def optimizer_initializer(self):
-        # Initialize optimizer
-        # AdamOptimizer and GradientDescentOptimizer has different effect on the final results
-        # GradientDescentOptimizer is probably better than AdamOptimizer in Siamese Network
-        #optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
-        optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE).minimize(self.loss)
-        return optimizer
-
-    def train_model(self, input_1, input_2, label):
-        # Train the network
-        _, train_loss = self.sess.run([self.optimizer, self.loss], 
-            feed_dict = {self.tf_input_1: input_1, self.tf_input_2: input_2, self.tf_label: label})
-        return train_loss
-
-    def test_model(self, input_1):
-        # Test the trained model
-        output = self.sess.run(self.output_1, feed_dict = {self.tf_input_1: input_1})
+        # Define the architecture of the sub-networks
+        self.conv_layer = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.BatchNorm2d(32),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+        
+        self.fc_layer = nn.Sequential(
+            nn.Linear(7*7*64, 128),
+            nn.ReLU(),
+            nn.BatchNorm1d(128),
+            nn.Dropout(0.5),
+            nn.Linear(128, 2)
+        )
+        
+    def forward_once(self, x):
+        output = self.conv_layer(x)
+        output = output.view(output.size()[0], -1)  # Flatten the output
+        output = self.fc_layer(output)
         return output
 
-    def load_model(self):
-        # Restore the trained model
-        assert os.path.exists(MODEL_DIR + MODEL_NAME)
-        self.saver.restore(self.sess, MODEL_DIR + MODEL_NAME)
+    def forward(self, input1, input2):
+        output1 = self.forward_once(input1)
+        output2 = self.forward_once(input2)
+        return output1, output2
+    
+class ContrastiveLoss(nn.Module):
 
-    def save_model(self):
-        # Save model routinely
-        if not os.path.exists(MODEL_DIR):
-            os.makedirs(MODEL_DIR)
-        # Save the latest trained models
-        self.saver.save(self.sess, MODEL_DIR + MODEL_NAME)        
+    def __init__(self, margin=5.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
 
+    def forward(self, output1, output2, label):
+        eucliden_distance = (output1 - output2).pow(2).sum(1)
+        loss = torch.mean((label) * eucliden_distance + (1 - label) * torch.pow(torch.clamp(self.margin - eucliden_distance.sqrt(), min=0.0), 2))
+        return loss
+    
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Function for computing test loss
+def compute_test_loss(model, test_loader, criterion, device):
+    model.eval()  # Set the model to evaluation mode
+    total_loss = 0
+
+    with torch.no_grad():  # No need to track gradients in testing
+        for i, (images, labels) in enumerate(test_loader):
+            images = images.view(-1, 28*28).to(device)
+            labels = labels.to(device)
+            pairs, targets = create_pairs(images, labels)
+            
+            # Forward pass
+            output1, output2 = model(pairs[:, 0], pairs[:, 1])
+            loss = criterion(output1.to(device), output2.to(device), targets.to(device))
+
+            total_loss += loss.item()
+
+    # Return average test loss
+    return total_loss / len(test_loader)
+
+# Function for computing test loss
+def compute_test_loss_cnn(model, test_loader, criterion, device):
+    model.eval()  # Set the model to evaluation mode
+    total_loss = 0
+
+    with torch.no_grad():  # No need to track gradients in testing
+        for i, (images, labels) in enumerate(test_loader):
+            images = images.view(-1,1,28,28).to(device)
+            labels = labels.to(device)
+            pairs, targets = create_pairs(images, labels)
+            
+            # Forward pass
+            output1, output2 = model(pairs[:, 0], pairs[:, 1])
+            loss = criterion(output1.to(device), output2.to(device), targets.to(device))
+
+            total_loss += loss.item()
+
+    # Return average test loss
+    return total_loss / len(test_loader)
+
+
+# Create a balanced set of pairs for each batch
+def create_pairs(images, labels):
+    digit_indices = [torch.where(labels == i)[0] for i in range(10)]
+    pairs = []
+    labels = []
+
+    # find where the length of each element in digit indices is nonzero
+    good_label_indices = np.where([len(d) > 0 for d in digit_indices])[0]
+
+    for idx in good_label_indices:
+        d = digit_indices[idx]
+        for i in range(len(d) - 1):
+            z1, z2 = d[i], d[i + 1]
+            pairs.append(torch.stack([images[z1], images[z2]]))  
+            labels.extend([1])
+
+            # Find a label with images
+            while True:
+                inc = random.randrange(1, 10)
+                dn_idx = (idx + inc) % 10
+                dn = digit_indices[dn_idx]
+                if len(dn) > 0:  # Only proceed if dn is not empty
+                    j = random.randrange(0, len(dn))
+                    z1, z2 = d[i], dn[j]
+                    pairs.append(torch.stack([images[z1], images[z2]]))
+                    labels.extend([0])
+                    break  # Exit the loop as soon as a valid pair is found     
+
+    return torch.stack(pairs), torch.tensor(labels)
+
+def save_embeddings(model, loader, filename='embed.txt'):
+    all_embeddings = []
+    with torch.no_grad():
+        for images, _ in loader:
+            images = images.view(-1, 28*28).to(device)
+            embeddings = model.forward_once(images)  # Assuming your network's forward method takes one argument
+            all_embeddings.append(embeddings)
+
+    # convert to torch tensor
+    all_embeddings = torch.cat(all_embeddings, dim=0)
+
+    # save to file
+    torch.save(all_embeddings, filename)
+
+def save_embeddings_cnn(model, loader, filename='embed.txt'):
+    all_embeddings = []
+    with torch.no_grad():
+        for images, _ in loader:
+            images = images.view(-1,1,28,28).to(device)
+            embeddings = model.forward_once(images)  # Assuming your network's forward method takes one argument
+            all_embeddings.append(embeddings)
+
+    # convert to torch tensor
+    all_embeddings = torch.cat(all_embeddings, dim=0)
+
+    # save to file
+    torch.save(all_embeddings, filename)
+
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)

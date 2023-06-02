@@ -1,0 +1,6 @@
+data/
+sandbox/
+__pycache__/
+embed*
+loss_history.pt
+siamese_best.pt
