@@ -10,8 +10,8 @@ EPISODE_MAX = 50000
 BATCH_SIZE = 128
 
 # Preparing MNIST dataset
-train_dataset = datasets.MNIST(root='./mnist_data/', train=True, transform=transforms.ToTensor(), download=True)
-test_dataset = datasets.MNIST(root='./mnist_data/', train=False, transform=transforms.ToTensor(), download=True)
+train_dataset = datasets.MNIST(root='./data/', train=True, transform=transforms.ToTensor(), download=True)
+test_dataset = datasets.MNIST(root='./data/', train=False, transform=transforms.ToTensor(), download=True)
 
 train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)

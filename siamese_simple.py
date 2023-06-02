@@ -19,13 +19,6 @@ import os
 import numpy as np
 import random
 
-LEARNING_RATE = 0.001
-SAVE_PERIOD = 500
-MODEL_DIR = 'model/' # path for saving the model
-MODEL_NAME = 'siamese_model.pt'
-RAND_SEED = 0 # random seed
-# tf.set_random_seed(RAND_SEED)
-
 class Siamese(nn.Module):
 
     def __init__(self):
@@ -112,18 +105,6 @@ class ContrastiveLoss(nn.Module):
         return loss
     
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-siamese_net = Siamese().to(device)
-criterion = ContrastiveLoss()
-optimizer = optim.SGD(siamese_net.parameters(), lr=LEARNING_RATE)
-
-def save_model(model_name):
-    if not os.path.exists(MODEL_DIR):
-        os.makedirs(MODEL_DIR)
-    torch.save(siamese_net.state_dict(), MODEL_DIR + model_name)
-
-def load_model():
-    siamese_net.load_state_dict(torch.load(MODEL_DIR + MODEL_NAME))
 
 # Function for computing test loss
 def compute_test_loss(model, test_loader, criterion, device):

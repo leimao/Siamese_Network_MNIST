@@ -6,12 +6,15 @@ import torch
 import sys
 import matplotlib.pyplot as plt
 
-EPISODE_MAX = 50000
+# constants
+EPISODE_MAX = 50
 BATCH_SIZE = 128
+LEARNING_RATE = 0.001
+SAVE_PERIOD = 10
 
 # Preparing MNIST dataset
-train_dataset = datasets.MNIST(root='./mnist_data/', train=True, transform=transforms.ToTensor(), download=True)
-test_dataset = datasets.MNIST(root='./mnist_data/', train=False, transform=transforms.ToTensor(), download=True)
+train_dataset = datasets.MNIST(root='./data/', train=True, transform=transforms.ToTensor(), download=True)
+test_dataset = datasets.MNIST(root='./data/', train=False, transform=transforms.ToTensor(), download=True)
 
 train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -70,7 +73,7 @@ for episode in range(EPISODE_MAX):
         torch.save(siamese_net.state_dict(), 'siamese_best.pt')
 
     # Save model
-    if (episode+1) % 10 == 0:
+    if (episode+1) % SAVE_PERIOD == 0:
         # save the loss history
         torch.save(losses,f'loss_history.pt')
 
